@@ -11,7 +11,7 @@ import { NodeData } from "../types/index.js";
 /**
  * Remove nodes by removing their key from the parent
  * Remove data from the node
- * Keep when they have children
+ * Keep when they have data or children
  * Returns a list of every data entry in nodes that was removed
  */
 export const removeNodes = (nodes: IrNode[]): Array<NodeData> => {
@@ -30,7 +30,7 @@ const removeEmptyNodes = (node: IrNode): void => {
   const hasStaticChildren = Object.keys(node.childrenStatic).length > 0;
   const hasDynamicChildren = node.childrenDynamic.length > 0;
   const hasChildren = hasStaticChildren || hasDynamicChildren;
-  if (hasChildren) {
+  if (node.data || hasChildren) {
     return;
   }
   if (node.parent) {
@@ -40,7 +40,7 @@ const removeEmptyNodes = (node: IrNode): void => {
     if (isNodeDynamic(node)) {
       node.parent.childrenDynamic = removeDynamicChild(
         node.key,
-        node.parent.childrenDynamic
+        node.parent.childrenDynamic,
       );
     }
     removeEmptyNodes(node.parent);
@@ -54,7 +54,11 @@ export const isPartDynamic = (part: string) =>
  * Inserts node at position pathname into intoNode
  * Creates nodes along its path if necessary
  */
-export const insertNode = (pathname: string[], node: IrNode, intoNode: IrNode): void => {
+export const insertNode = (
+  pathname: string[],
+  node: IrNode,
+  intoNode: IrNode,
+): void => {
   if (pathname.length === 0) {
     return;
   }
@@ -63,7 +67,7 @@ export const insertNode = (pathname: string[], node: IrNode, intoNode: IrNode): 
   if (isPartDynamic(part)) {
     const dynamicChildExists = matchDynamicChildren(
       part,
-      intoNode.childrenDynamic
+      intoNode.childrenDynamic,
     );
     if (dynamicChildExists) {
       if (isLast) {

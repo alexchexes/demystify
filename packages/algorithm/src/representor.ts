@@ -3,14 +3,19 @@ import { HarEntry } from "./types/index.js";
 import { harToHarType } from "./har-to-hartype/index.js";
 import stringify from "json-stable-stringify";
 import { formatHar } from "./utils/index.js";
+import { PathParameterisationOptions } from "./parameterisation/parameterisation-options.js";
+
+type RepresentorOptions = {
+  parameterisation?: Partial<PathParameterisationOptions>;
+};
 
 /**
  * Delegate HAR entries to different representations
  */
 export class Representor {
   rest: RestManager;
-  constructor() {
-    this.rest = new RestManager();
+  constructor(options: RepresentorOptions = {}) {
+    this.rest = new RestManager(options.parameterisation);
   }
 
   /**
@@ -30,17 +35,19 @@ export class Representor {
       // console.log("gRPC-Web not supported yet");
     }
     return false;
-  }
+  };
 
   reset = (): void => {
     this.rest.reset();
-  }
+  };
 
   serialise = (): string => {
-    return stringify({
-      rest: this.rest.serialise(),
-    }) || "";
-  }
+    return (
+      stringify({
+        rest: this.rest.serialise(),
+      }) || ""
+    );
+  };
 
   deserialise = (input: string): boolean => {
     try {
@@ -52,5 +59,5 @@ export class Representor {
     } catch {
       return false;
     }
-  }
+  };
 }

@@ -1,3 +1,3 @@
-export * from "./select-file";
-export * from "./load-save";
-export * from "./write-text-to-file";
+export * from "./select-file.js";
+export * from "./load-save.js";
+export * from "./write-text-to-file.js";

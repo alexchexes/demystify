@@ -2,7 +2,12 @@
 
 import { parseArgs } from "node:util";
 import * as fs from "node:fs";
-import { HarEntry, Representor } from "demystify-lib";
+import {
+  HarEntry,
+  isPathParameterisationMode,
+  pathParameterisationOptionsFromMode,
+  Representor,
+} from "demystify-lib";
 
 const fileExists = async (path: string) => {
   try {
@@ -28,6 +33,10 @@ async function main() {
         type: "boolean",
         short: "s",
       },
+      parameterisation: {
+        type: "string",
+        short: "p",
+      },
     },
   });
 
@@ -41,6 +50,8 @@ Options:
   -h, --help                 Show help information
   -i, --input  <string>      A path to a HTTP Archive file (HAR)
   -s, --stdout <boolean>     Optional: when "true", write a JSON array to stdout instead of writing files
+  -p, --parameterisation <string>
+                              Path folding mode: safe-text, id-only, or off
 
 This command writes OpenAPI 3.1 specifications to the current directory
 Names of these files follow the convention {hostname}.{type}.json
@@ -52,12 +63,21 @@ Example type: openapi
   }
   if (!values.input || !(await fileExists(values.input))) {
     console.error(
-      "The --input [name.har] flag is required and must be a valid HAR file"
+      "The --input [name.har] flag is required and must be a valid HAR file",
+    );
+    process.exit(1);
+  }
+  const parameterisationMode = values.parameterisation || "safe-text";
+  if (!isPathParameterisationMode(parameterisationMode)) {
+    console.error(
+      "The --parameterisation flag must be one of: safe-text, id-only, off",
     );
     process.exit(1);
   }
 
-  const representor = new Representor();
+  const representor = new Representor({
+    parameterisation: pathParameterisationOptionsFromMode(parameterisationMode),
+  });
   try {
     const inputHar = await fs.promises.readFile(values.input, "utf-8");
     const entries = JSON.parse(inputHar).log.entries as HarEntry[];
@@ -65,13 +85,13 @@ Example type: openapi
       for (const entry of entries) {
         representor.upsert(entry);
       }
-    } catch (e) {
+    } catch {
       console.error("Failed to upsert one or more HAR entries");
       process.exit(1);
     }
-  } catch (e) {
+  } catch {
     console.error(
-      'Could not parse the HAR file. It should be JSON, beginning with { "log": ... }'
+      'Could not parse the HAR file. It should be JSON, beginning with { "log": ... }',
     );
     process.exit(1);
   }
@@ -88,7 +108,7 @@ Example type: openapi
     }
   }
   if (output.length) {
-    console.log(`[${output.join(',\n')}]`);
+    console.log(`[${output.join(",\n")}]`);
   }
 }
 

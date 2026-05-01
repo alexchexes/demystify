@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, defineProps, watch } from "vue";
-import type { HarEntry } from "demystify-lib";
-import { Representor } from "demystify-lib";
+import type { HarEntry, PathParameterisationOptions } from "demystify-lib";
+import { defaultPathParameterisationOptions, Representor } from "demystify-lib";
 import { debounce } from "lodash";
 import "../index.css";
 import MenuPage from "./MenuPage.vue";
@@ -43,7 +43,13 @@ interface OpenAPIPage extends Page {
   data: OpenApiPageData;
 }
 
-const representor = ref<Representor>(new Representor());
+const parameterisationOptions = ref<PathParameterisationOptions>({
+  ...defaultPathParameterisationOptions,
+});
+const createRepresentor = () =>
+  new Representor({ parameterisation: parameterisationOptions.value });
+const representor = ref<Representor>(createRepresentor());
+const replayableHar = ref<HarEntry[]>([]);
 const currentPage = ref<Page>({
   name: "menu",
   data: { representor: representor.value, items: [] },
@@ -80,13 +86,47 @@ const debouncedUpdate = debounce(() => {
   }
 }, 500);
 
+const upsertEntry = (entry: HarEntry, replayable: boolean): boolean => {
+  const wasUpsert = representor.value.upsert(entry);
+  if (wasUpsert && replayable) {
+    replayableHar.value.push(entry);
+  }
+  return wasUpsert;
+};
+
+const rebuildRepresentor = () => {
+  // UI toggles can rebuild only from HAR entries captured or loaded in this
+  // session. Serialized Demystify saves contain the already-built IR tree.
+  const entries = [...replayableHar.value];
+  representor.value = createRepresentor();
+  for (const entry of entries) {
+    representor.value.upsert(entry);
+  }
+  if (isMenuPage(currentPage.value)) {
+    updateMenuPage();
+  } else if (isOpenAPIPage(currentPage.value)) {
+    updateOpenAPIPage(currentPage.value.data.hostnames);
+  }
+};
+
+const onChangeParameterisationOptions = (
+  options: PathParameterisationOptions,
+) => {
+  parameterisationOptions.value = options;
+  if (replayableHar.value.length) {
+    rebuildRepresentor();
+    return;
+  }
+  representor.value.rest.setParameterisationOptions(options);
+};
+
 watch(
   () => props.har,
   (har) => {
     if (har.length) {
       try {
         for (const entry of har) {
-          const wasUpsert = representor.value.upsert(entry);
+          const wasUpsert = upsertEntry(entry, true);
           if (wasUpsert) {
             debouncedUpdate();
           }
@@ -95,7 +135,7 @@ watch(
         console.error(e);
       }
     }
-  }
+  },
 );
 
 const onClickViewApi = (hostnames: string[]) => {
@@ -107,7 +147,7 @@ const tryToLoadHarText = (text: string) => {
     const har = JSON.parse(text) as Har;
     let count = 0;
     for (const entry of har.log.entries) {
-      const wasUpsert = representor.value.upsert(entry);
+      const wasUpsert = upsertEntry(entry, true);
       if (wasUpsert) {
         count++;
       }
@@ -128,7 +168,8 @@ const tryToLoadHarText = (text: string) => {
 };
 
 const onClickReset = () => {
-  representor.value = new Representor();
+  replayableHar.value = [];
+  representor.value = createRepresentor();
   updateMenuPage();
 };
 
@@ -155,6 +196,7 @@ const boundOnClickLoad = async () => {
     if (!successful) {
       throw new Error("Failed to load save");
     }
+    replayableHar.value = [];
     updateMenuPage();
     toast({
       title: "Load Successful",
@@ -165,7 +207,11 @@ const boundOnClickLoad = async () => {
   } catch (e: any) {
     console.log(e.message);
     // The error below happens every time the user closes the file dialog without a selection
-    if (e.message.startsWith("Error calling method: open : no such file or directory")) {
+    if (
+      e.message.startsWith(
+        "Error calling method: open : no such file or directory",
+      )
+    ) {
       return;
     }
     toast({
@@ -194,6 +240,8 @@ const onClickDeleteHost = (hostname: string) => {
     :onClickReset="onClickReset"
     :onClickHarText="tryToLoadHarText"
     :onClickDeleteHost="onClickDeleteHost"
+    :parameterisationOptions="parameterisationOptions"
+    :onChangeParameterisationOptions="onChangeParameterisationOptions"
   >
     <slot></slot>
   </MenuPage>

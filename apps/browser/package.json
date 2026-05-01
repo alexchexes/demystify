@@ -13,7 +13,7 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "vue-tsc --noEmit",
     "postinstall": "wxt prepare",
-    "test": "NODE_OPTIONS='--experimental-json-modules' vitest run",
+    "test": "vitest run",
     "test:watch": "vitest watch",
     "test:update": "vitest -u"
   },

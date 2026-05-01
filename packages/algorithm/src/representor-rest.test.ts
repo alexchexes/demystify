@@ -71,7 +71,7 @@ describe("generation following upsert of REST HAR entries", () => {
     expect(result.getSpec().info.title).toBe("OpenAPI Specification");
     expect(result.getSpec().info.version).toBe("1.0.0");
     expect(result.getSpec().info.description).toBe(
-      "A specification for www.example.com"
+      "A specification for www.example.com",
     );
     expect(result.getSpec().paths).toBeDefined();
   });
@@ -103,7 +103,7 @@ describe("generation following upsert of REST HAR entries", () => {
 
     const mediaTypeObject =
       result.getSpec().paths?.[pathname]?.post?.responses?.["200"]?.content[
-      "application/json"
+        "application/json"
       ];
     expect(mediaTypeObject).toEqual(expectMergeAbc);
     expect(await validateSpec(result)).toEqual({ valid: true });
@@ -126,7 +126,7 @@ describe("generation following upsert of REST HAR entries", () => {
   });
 });
 
-describe('edge cases', () => {
+describe("edge cases", () => {
   it("handles cases where the har method is uppercase and lowercase", async () => {
     const representor = new Representor();
     const entry1 = createHarEntry(createResponse(simpleJsonA));
@@ -140,7 +140,7 @@ describe('edge cases', () => {
 
     const mediaTypeObject =
       result.getSpec().paths?.[pathname]?.post?.responses?.["200"]?.content[
-      "application/json"
+        "application/json"
       ];
     expect(mediaTypeObject).toEqual(expectMergeAbc);
     expect(await validateSpec(result)).toEqual({ valid: true });
@@ -201,28 +201,69 @@ describe("upsert and automatic parameterisation integration tests", () => {
   const host = "api.example.com";
   const href = `https://${host}`;
 
-  it("given /a/b and /a/c have different responses, and adding /a/d with the same type, all endpoints collapse into the dynamic node", () => {
+  it("does not merge an existing non-equivalent route when folding equivalent IDs", () => {
     const representor = new Representor();
     const response1 = createContent({ test: 1 });
     const response2 = createContent({ test: false });
     representor.upsert(
-      createHarEntry({ url: `${href}/a/b`, response: response1 })
+      createHarEntry({ url: `${href}/a/1`, response: response1 }),
     );
     representor.upsert(
-      createHarEntry({ url: `${href}/a/d`, response: response2 })
+      createHarEntry({ url: `${href}/a/3`, response: response2 }),
     );
     representor.upsert(
-      createHarEntry({ url: `${href}/a/c`, response: response2 })
+      createHarEntry({ url: `${href}/a/2`, response: response2 }),
     );
-    const node: IrNode =
-      representor.rest.data[host]!;
+    const node: IrNode = representor.rest.data[host]!;
 
-    expect(node.childrenStatic["a"]!.childrenDynamic[0]!
-      .data?.methods["post"]!.response["200"]!["application/json"]!.body?.properties).toEqual({
-        test: {
-          type: ["boolean", "integer"],
-        }
-      })
+    expect(
+      node.childrenStatic["a"]!.childrenDynamic[0]!.data?.methods["post"]!
+        .response["200"]!["application/json"]!.body?.properties,
+    ).toEqual({
+      test: {
+        type: "boolean",
+      },
+    });
+    expect(node.childrenDynamic).toHaveLength(0);
+    expect(Object.values(node.childrenStatic)).toHaveLength(1);
+    const a = node.childrenStatic["a"]!;
+    expect(a.childrenDynamic).toHaveLength(1);
+    expect(Object.values(a.childrenStatic)).toHaveLength(1);
+    expect(
+      a.childrenStatic["1"]!.data?.methods["post"]!.response["200"]![
+        "application/json"
+      ]!.body?.properties,
+    ).toEqual({
+      test: {
+        type: "integer",
+      },
+    });
+    const dynamic = a.childrenDynamic[0]!;
+    expect(dynamic.childrenDynamic).toHaveLength(0);
+    expect(Object.values(dynamic.childrenStatic)).toHaveLength(0);
+  });
+
+  it("given /a/{}, compatible requests match against it", () => {
+    const representor = new Representor();
+    const response1 = createContent({ test: 1 });
+    representor.upsert(
+      createHarEntry({ url: `${href}/a/1`, response: response1 }),
+    );
+    representor.upsert(
+      createHarEntry({ url: `${href}/a/2`, response: response1 }),
+    );
+    representor.upsert(
+      createHarEntry({ url: `${href}/a/3`, response: response1 }),
+    );
+    const node: IrNode = representor.rest.data[host]!;
+    expect(
+      node.childrenStatic["a"]!.childrenDynamic[0]!.data?.methods["post"]!
+        .response["200"]!["application/json"]!.body?.properties,
+    ).toEqual({
+      test: {
+        type: "integer",
+      },
+    });
     expect(node.childrenDynamic).toHaveLength(0);
     expect(Object.values(node.childrenStatic)).toHaveLength(1);
     const a = node.childrenStatic["a"]!;
@@ -233,52 +274,39 @@ describe("upsert and automatic parameterisation integration tests", () => {
     expect(Object.values(dynamic.childrenStatic)).toHaveLength(0);
   });
 
-  it("given /a/{}, requests match against it", () => {
+  it("given /a/{}, incompatible requests do not match against it", () => {
     const representor = new Representor();
-    const response1 = createContent({ test: 1 });
-    const response2 = createContent({ test: false });
+    const response1 = createContent({ test: { value: 1 }, ok: true });
+    const response2 = createContent({ test: [1], ok: true });
     representor.upsert(
-      createHarEntry({ url: `${href}/a/b`, response: response1 })
+      createHarEntry({ url: `${href}/a/1`, response: response1 }),
     );
     representor.upsert(
-      createHarEntry({ url: `${href}/a/c`, response: response1 })
+      createHarEntry({ url: `${href}/a/2`, response: response1 }),
     );
     representor.upsert(
-      createHarEntry({ url: `${href}/a/d`, response: response2 })
+      createHarEntry({ url: `${href}/a/3`, response: response2 }),
     );
-    const node: IrNode =
-      representor.rest.data[host]!;
-    expect(node.childrenStatic["a"]!.childrenDynamic[0]!
-      .data?.methods["post"]!.response["200"]!["application/json"]!.body?.properties).toEqual({
-        test: {
-          type: ["boolean", "integer"],
-        }
-      })
-    expect(node.childrenDynamic).toHaveLength(0);
-    expect(Object.values(node.childrenStatic)).toHaveLength(1);
-    const a = node.childrenStatic["a"]!;
+
+    const a = representor.rest.data[host]!.childrenStatic["a"]!;
     expect(a.childrenDynamic).toHaveLength(1);
-    expect(Object.values(a.childrenStatic)).toHaveLength(0);
-    const dynamic = a.childrenDynamic[0]!;
-    expect(dynamic.childrenDynamic).toHaveLength(0);
-    expect(Object.values(dynamic.childrenStatic)).toHaveLength(0);
+    expect(Object.values(a.childrenStatic)).toHaveLength(1);
+    expect(a.childrenStatic["3"]!.data).not.toBeNull();
   });
 
-  it("given /a/{}/a/{}, requests match against it", () => {
+  it("given /a/{}/a/{}, compatible requests match against it", () => {
     const representor = new Representor();
     const response1 = createContent({ test: 1 });
-    const response2 = createContent({ test: false });
     representor.upsert(
-      createHarEntry({ url: `${href}/a/b/a/1`, response: response1 })
+      createHarEntry({ url: `${href}/a/1/a/1`, response: response1 }),
     );
     representor.upsert(
-      createHarEntry({ url: `${href}/a/c/a/2`, response: response1 })
+      createHarEntry({ url: `${href}/a/2/a/2`, response: response1 }),
     );
     representor.upsert(
-      createHarEntry({ url: `${href}/a/d/a/3`, response: response2 })
+      createHarEntry({ url: `${href}/a/3/a/3`, response: response1 }),
     );
-    const node: IrNode =
-      representor.rest.data[host]!;
+    const node: IrNode = representor.rest.data[host]!;
     expect(node.childrenDynamic).toHaveLength(0);
     expect(Object.values(node.childrenStatic)).toHaveLength(1);
     const a1 = node.childrenStatic["a"]!;
@@ -291,11 +319,14 @@ describe("upsert and automatic parameterisation integration tests", () => {
     expect(a2.childrenDynamic).toHaveLength(1);
     expect(Object.values(a2.childrenStatic)).toHaveLength(0);
     const dynamic2 = a2.childrenDynamic[0]!;
-    expect(dynamic2.data?.methods["post"]!.response["200"]!["application/json"]!.body?.properties).toEqual({
+    expect(
+      dynamic2.data?.methods["post"]!.response["200"]!["application/json"]!.body
+        ?.properties,
+    ).toEqual({
       test: {
-        type: ["boolean", "integer"],
-      }
-    })
+        type: "integer",
+      },
+    });
     expect(dynamic2.childrenDynamic).toHaveLength(0);
     expect(Object.values(dynamic2.childrenStatic)).toHaveLength(0);
   });
@@ -303,28 +334,39 @@ describe("upsert and automatic parameterisation integration tests", () => {
   it("should obey part-in-common heuristic, that equivalence requires at least one similar part", () => {
     const representor = new Representor();
     const response = createContent({ test: 1 });
-    representor.upsert(
-      createHarEntry({ url: `${href}/1/2`, response })
-    );
-    representor.upsert(
-      createHarEntry({ url: `${href}/3/4`, response })
-    );
-    const node: IrNode =
-      representor.rest.data[host]!;
+    representor.upsert(createHarEntry({ url: `${href}/1/2`, response }));
+    representor.upsert(createHarEntry({ url: `${href}/3/4`, response }));
+    const node: IrNode = representor.rest.data[host]!;
     // node
     expect(node.childrenDynamic).toHaveLength(0);
     expect(Object.values(node.childrenStatic)).toHaveLength(2);
     // /1
     expect(node.childrenStatic["1"]?.childrenDynamic).toHaveLength(0);
-    expect(Object.values(node.childrenStatic["1"]?.childrenStatic!)).toHaveLength(1);
+    expect(
+      Object.values(node.childrenStatic["1"]!.childrenStatic),
+    ).toHaveLength(1);
     // /3
     expect(node.childrenStatic["3"]?.childrenDynamic).toHaveLength(0);
-    expect(Object.values(node.childrenStatic["3"]?.childrenStatic!)).toHaveLength(1);
+    expect(
+      Object.values(node.childrenStatic["3"]!.childrenStatic),
+    ).toHaveLength(1);
     // /1/2
-    expect(Object.values(node.childrenStatic["1"]?.childrenStatic["2"]?.childrenStatic!)).toHaveLength(0);
-    expect(node.childrenStatic["1"]?.childrenStatic["2"]?.childrenDynamic).toHaveLength(0);
+    expect(
+      Object.values(
+        node.childrenStatic["1"]!.childrenStatic["2"]!.childrenStatic,
+      ),
+    ).toHaveLength(0);
+    expect(
+      node.childrenStatic["1"]?.childrenStatic["2"]?.childrenDynamic,
+    ).toHaveLength(0);
     // /3/4
-    expect(Object.values(node.childrenStatic["3"]?.childrenStatic["4"]?.childrenStatic!)).toHaveLength(0);
-    expect(node.childrenStatic["3"]?.childrenStatic["4"]?.childrenDynamic).toHaveLength(0);
+    expect(
+      Object.values(
+        node.childrenStatic["3"]!.childrenStatic["4"]!.childrenStatic,
+      ),
+    ).toHaveLength(0);
+    expect(
+      node.childrenStatic["3"]?.childrenStatic["4"]?.childrenDynamic,
+    ).toHaveLength(0);
   });
 });

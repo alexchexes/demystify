@@ -6,28 +6,47 @@ import { OpenApiBuilder } from "openapi3-ts/oas31";
 import { pick } from "lodash";
 import { serialiseRest } from "./utils/index.js";
 import { automaticParameterisation } from "./parameterisation/automatic-parameterisation.js";
+import {
+  PathParameterisationOptions,
+  resolvePathParameterisationOptions,
+} from "./parameterisation/parameterisation-options.js";
 
 type Data = HostToNode;
 type Output = OpenApiBuilder;
 
 export class RestManager extends Manager<Data, Output> {
   data: Data;
-  constructor() {
+  parameterisationOptions: PathParameterisationOptions;
+  constructor(options: Partial<PathParameterisationOptions> = {}) {
     super();
     this.data = {};
+    this.parameterisationOptions = resolvePathParameterisationOptions(options);
   }
 
+  setParameterisationOptions = (
+    options: Partial<PathParameterisationOptions>,
+  ): void => {
+    this.parameterisationOptions = resolvePathParameterisationOptions(options);
+  };
+
   upsert = (data: ValidHar): void => {
-    const host = new URL(data.har.request.url).host;
+    const url = new URL(data.har.request.url);
+    const host = url.host;
     const rootNode = this.data[host] || null;
-    const { root, inserted } = updateOrCreate({ data, rootNode });
+    const { root, inserted } = updateOrCreate({
+      data,
+      options: this.parameterisationOptions,
+      rootNode,
+    });
     this.data[host] = root;
     automaticParameterisation({
-      pathname: data.har.request.url.split("/").slice(3),
+      pathname: url.pathname.split("/").filter((part) => part.length > 0),
       insertedNode: inserted,
       rootNode: root,
       method: data.har.request.method,
       mimeType: data.har.response.content.mimeType,
+      statusCode: data.har.response.status.toString(),
+      options: this.parameterisationOptions,
     });
   };
 

@@ -9,7 +9,7 @@
       "dependsOn": ["^lint"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^build", "^check-types"]
     },
     "test": {
       "dependsOn": ["^build"]
@@ -20,7 +20,7 @@
     },
     "test:update": {},
     "test:watch": {
-      "cache": false, 
+      "cache": false,
       "persistent": true
     }
   }

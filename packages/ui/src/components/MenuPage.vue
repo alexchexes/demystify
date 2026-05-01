@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Representor } from "demystify-lib";
+import type { PathParameterisationOptions, Representor } from "demystify-lib";
 import Table from "./Table.vue";
 import {
   Card,
@@ -30,6 +30,10 @@ defineProps<{
   onClickReset: () => void;
   onClickHarText: (text: string) => void;
   onClickDeleteHost: (hostname: string) => void;
+  parameterisationOptions: PathParameterisationOptions;
+  onChangeParameterisationOptions: (
+    options: PathParameterisationOptions,
+  ) => void;
 }>();
 </script>
 
@@ -83,6 +87,8 @@ defineProps<{
           :onClickSelectHar="onClickSelectHar"
           :onClickReset="onClickReset"
           :onClickHarText="onClickHarText"
+          :parameterisationOptions="parameterisationOptions"
+          :onChangeParameterisationOptions="onChangeParameterisationOptions"
         />
       </CardFooter>
     </Card>
