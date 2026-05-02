@@ -7,6 +7,8 @@ import {
   RequestBodyObject,
   ResponseObject,
   ResponsesObject,
+  SecurityRequirementObject,
+  SecuritySchemeObject,
 } from "openapi3-ts/oas31";
 import { Endpoint } from "./yield-endpoints.js";
 import { NodeData } from "../types/index.js";
@@ -93,17 +95,100 @@ export const createQueryParameterObjects = (
   });
 };
 
-export const createCookieParameterObjects = (
-  cookies: NodeData["methods"]["get"]["cookies"],
-): Array<ParameterObject> => {
-  return cookies && Object.entries(cookies).map(([name/*, example*/]) => ({
+type ApiKeySecurityLocation = "cookie" | "header";
+
+type ApiKeySecurityDefinition = {
+  key: string;
+  scheme: SecuritySchemeObject;
+};
+
+type AuthSecurityDefinition = ApiKeySecurityDefinition & {
+  key: string;
+  scheme: SecuritySchemeObject;
+};
+
+const sanitiseSecurityKeyPart = (value: string): string => {
+  const sanitised = value.toLowerCase().replace(/[^a-z0-9._-]+/g, "_");
+  return sanitised || "credential";
+};
+
+const FNV1A_32_OFFSET_BASIS = 0x811c9dc5;
+const FNV1A_32_PRIME = 0x01000193;
+
+const createShortHash = (value: string): string => {
+  // FNV-1a is used here only as a small deterministic hash for component keys.
+  let hash = FNV1A_32_OFFSET_BASIS;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, FNV1A_32_PRIME);
+  }
+  return (hash >>> 0).toString(36).padStart(7, "0");
+};
+
+const getSecurityKeyName = (
+  location: ApiKeySecurityLocation,
+  name: string,
+): string => {
+  const canonicalName = location === "header" ? name.toLowerCase() : name;
+  return `apikey_${location}_${sanitiseSecurityKeyPart(name)}_${createShortHash(
+    `${location}:${canonicalName}`,
+  )}`;
+};
+
+const createApiKeySecurityDefinition = (
+  location: ApiKeySecurityLocation,
+  name: string,
+): ApiKeySecurityDefinition => ({
+  key: getSecurityKeyName(location, name),
+  scheme: {
+    type: "apiKey",
+    in: location,
     name,
-    required: true,
-    in: "cookie",
-    schema: {
-      type: "string",
+  },
+});
+
+const isAuthorizationHeader = (name: string): boolean =>
+  name.toLowerCase() === "authorization";
+
+const createHeaderSecurityDefinitions = (
+  name: string,
+): AuthSecurityDefinition[] => {
+  const apiKey = createApiKeySecurityDefinition("header", name);
+  if (!isAuthorizationHeader(name)) return [apiKey];
+  return [
+    {
+      key: "bearer",
+      scheme: {
+        type: "http",
+        scheme: "bearer",
+      },
     },
-  })) || [];
+    apiKey,
+  ];
+};
+
+export const createAuthSecurityDefinitions = (
+  headers: string[] = [],
+  cookies: NodeData["methods"]["get"]["cookies"],
+): AuthSecurityDefinition[] => [
+  ...headers.flatMap(createHeaderSecurityDefinitions),
+  ...Object.keys(cookies || {}).map((name) =>
+    createApiKeySecurityDefinition("cookie", name),
+  ),
+];
+
+export const createSecurityRequirementObjects = (
+  definitions: AuthSecurityDefinition[],
+): SecurityRequirementObject[] | undefined => {
+  if (!definitions.length) return undefined;
+  // HAR only proves which credentials were present, not which one is required.
+  // Keep each scheme as an alternative so generated clients can try them.
+  return definitions.map(
+    ({ key }) =>
+      ({
+        [key]: [],
+      }) as SecurityRequirementObject,
+  );
 };
 
 /**
@@ -124,7 +209,7 @@ export const createPathParameterObjects = (
     const actualName = actualPathname[i]!;
     if (isPartDynamic(paramName)) {
       parameters.push({
-        name: paramName.replace(/[{}]/g, ''),
+        name: paramName.replace(/[{}]/g, ""),
         in: "path",
         schema: {
           type: "string",
