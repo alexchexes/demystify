@@ -241,10 +241,21 @@ const isAuthHeader = (header: string) => {
   return mustContain.some((v) => stripSpecialChars.includes(v));
 };
 
+const isIgnoredAuthHeader = (header: string) => {
+  const toLower = header.toLowerCase();
+  const stripSpecialChars = toLower.replace(/[^a-z0-9]/g, "");
+  return toLower === "authorization" || stripSpecialChars.includes("csrf");
+};
+
 export const getAuthHeaders = (headers: Entry["request"]["headers"]) => {
-  const withoutDefaultHeaders = filterIgnoreHeaders(headers);
   const out: string[] = [];
-  for (const header of withoutDefaultHeaders) {
+  for (const header of headers) {
+    if (
+      headersToIgnore.has(header.name.toLowerCase()) &&
+      !isIgnoredAuthHeader(header.name)
+    ) {
+      continue;
+    }
     if (isAuthHeader(header.name)) out.push(header.name);
   }
   return out;

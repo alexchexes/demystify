@@ -58,7 +58,9 @@ exports[`findOrCreate REST JSON > when rootNode is not provided, return a new ro
                     },
                   },
                 },
-                "requestHeaders": [],
+                "requestHeaders": [
+                  "Authorization",
+                ],
                 "response": {
                   "201": {
                     "application/json": {
@@ -195,7 +197,9 @@ exports[`findOrCreate REST JSON alternative > merges harEntry into an existing n
                     },
                   },
                 },
-                "requestHeaders": [],
+                "requestHeaders": [
+                  "Authorization",
+                ],
                 "response": {
                   "201": {
                     "application/json": {
@@ -532,7 +536,9 @@ exports[`findOrCreate XML > merges data into an existing node 1`] = `
                     "mostRecent": "<?xml version="1.0" encoding="UTF-8"?><pet><name>Fluffy</name><type>cat</type><age>3</age><vaccinated>true</vaccinated><tags><tag>friendly</tag><tag>indoor</tag></tags></pet>",
                   },
                 },
-                "requestHeaders": [],
+                "requestHeaders": [
+                  "Authorization",
+                ],
                 "response": {
                   "201": {
                     "application/xml": {
@@ -799,7 +805,9 @@ exports[`findOrCreate XML > when rootNode is not provided, return a new root nod
                     "mostRecent": "<?xml version="1.0" encoding="UTF-8"?><pet><name>Fluffy</name><type>cat</type><age>3</age><vaccinated>true</vaccinated><tags><tag>friendly</tag><tag>indoor</tag></tags></pet>",
                   },
                 },
-                "requestHeaders": [],
+                "requestHeaders": [
+                  "Authorization",
+                ],
                 "response": {
                   "201": {
                     "application/xml": {

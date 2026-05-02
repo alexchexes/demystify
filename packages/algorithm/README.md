@@ -81,6 +81,16 @@ Demystify does not retroactively split a folded path. If a later compatible
 observation matches an existing dynamic path, it can be merged into that path.
 When Demystify is uncertain, it keeps routes concrete rather than folding them.
 
+## Security generation
+
+Auth-looking request headers and cookies are emitted as OpenAPI security schemes
+and operation security requirements. They are not emitted as ordinary operation
+parameters, because they describe credentials rather than endpoint inputs.
+When multiple credentials are observed on the same request, each is emitted as a
+separate alternative because HAR data cannot prove which credential is actually
+required by the server. Observed `Authorization` headers are emitted both as
+Bearer auth and as a generic API-key header option.
+
 ```typescript
 import { Representor } from "demystify-lib";
 // Instantiate the representor

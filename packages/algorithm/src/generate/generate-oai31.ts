@@ -6,11 +6,12 @@ import {
 import { HostToNode } from "../types/index.js";
 import { yieldEndpoints } from "./yield-endpoints.js";
 import {
-  createCookieParameterObjects,
+  createAuthSecurityDefinitions,
   createPathParameterObjects,
   createQueryParameterObjects,
   createRequestBodyObject,
   createResponsesObject,
+  createSecurityRequirementObjects,
   shouldIncludeRequestBody,
 } from "./generate-oai31.helpers.js";
 
@@ -25,7 +26,6 @@ export function generateOai31(hostToNode: HostToNode): OpenApiBuilder {
     },
     paths: {},
   });
-  const headerCombos: { [s: string]: string[] } = {};
   for (const [host, rootNode] of Object.entries(hostToNode)) {
     builder.addServer({
       url: `http://${host}`,
@@ -41,18 +41,22 @@ export function generateOai31(hostToNode: HostToNode): OpenApiBuilder {
         node: { data },
         pathname,
       } = endpoint;
-      const pathParameterObjects = createPathParameterObjects(pathname, data.mostRecentPathname.split('/'));
+      const pathParameterObjects = createPathParameterObjects(
+        pathname,
+        data.mostRecentPathname.split("/"),
+      );
       const fullPathname = `/${pathname.slice(1).join("/")}`;
       for (const method of Object.keys(data.methods)) {
-        const requestHeaders = data.methods[method]?.requestHeaders || [] as string[];
-        const reqAuthName = requestHeaders.join("");
-        if (reqAuthName) {
-          headerCombos[reqAuthName] = requestHeaders;
-        }
-
         const endpointMethod = data.methods[method]!;
+        const authSecurityDefinitions = createAuthSecurityDefinitions(
+          endpointMethod.requestHeaders,
+          endpointMethod.cookies,
+        );
+        for (const { key, scheme } of authSecurityDefinitions) {
+          builder.addSecurityScheme(key, scheme);
+        }
         const queryParameterObjects = createQueryParameterObjects(
-          endpointMethod.queryParameters
+          endpointMethod.queryParameters,
         );
         const requestBody = createRequestBodyObject(endpointMethod.request);
         const responses = createResponsesObject(
@@ -64,14 +68,18 @@ export function generateOai31(hostToNode: HostToNode): OpenApiBuilder {
           description: `**host**: ${data.protocol}//${host}`,
           responses,
         };
-        const cookieParameterObjects = createCookieParameterObjects(endpointMethod.cookies);
         const allParameterObjects = [
           ...pathParameterObjects,
           ...queryParameterObjects,
-          ...cookieParameterObjects,
         ];
         if (allParameterObjects.length) {
           operation.parameters = allParameterObjects;
+        }
+        const security = createSecurityRequirementObjects(
+          authSecurityDefinitions,
+        );
+        if (security) {
+          operation.security = security;
         }
         if (requestBody && shouldIncludeRequestBody(method)) {
           operation.requestBody = requestBody;
@@ -88,18 +96,6 @@ export function generateOai31(hostToNode: HostToNode): OpenApiBuilder {
         }
       }
     }
-  }
-  for (const headerNames of Object.values(headerCombos)) {
-    let count = 1;
-    const authNameFinal = `Header Auth ${count}`;
-    for (const headerName of headerNames) {
-      builder.addSecurityScheme(authNameFinal, {
-        type: "apiKey",
-        in: "header",
-        name: headerName,
-      });
-    }
-    count++;
   }
   return builder;
 }
