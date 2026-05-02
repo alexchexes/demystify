@@ -157,6 +157,8 @@ Example: demystify --input ./example.har
 Options:
   -h, --help                 Show help information
   -i, --input  <string>      A path to a HTTP Archive file (HAR)
+  -p, --parameterisation <string>
+                              Path folding mode: safe-text, id-only, or off
   -s, --stdout <boolean>     Optional: when "true", write a JSON array to stdout instead of writing files
 
 This command writes OpenAPI 3.1 specifications to the current directory
