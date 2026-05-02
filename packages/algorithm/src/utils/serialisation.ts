@@ -6,8 +6,7 @@ export const serialiseRest = (data: HostToNode): string | null => {
   const cloned = cloneDeep(data);
   const stripParentProperty = (node: IrNode) => {
     if (node.parent) {
-      // @ts-expect-error
-      delete node.parent;
+      delete (node as Partial<IrNode>).parent;
     }
     node.childrenDynamic.forEach(stripParentProperty);
     Object.values(node.childrenStatic).forEach(stripParentProperty);

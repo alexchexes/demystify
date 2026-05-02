@@ -15,32 +15,16 @@ import { isValidUrl } from "./is-valid-url.js";
 
 export type Kind = "graphql" | "rest-json" | "rest-xml" | "grpc-web";
 
-interface DiscrimatedUnion {
-  har: HarEntry;
-  kind: Kind;
-}
+type DiscriminatedHar<TKind extends Kind, THar extends HarEntry> = {
+  har: THar;
+  kind: TKind;
+};
 
-interface Gql extends DiscrimatedUnion {
-  har: HarGraphQL;
-  kind: "graphql";
-}
-
-interface RestJson extends DiscrimatedUnion {
-  har: HarRestJson;
-  kind: "rest-json";
-}
-
-interface RestXml extends DiscrimatedUnion {
-  har: HarRestXml;
-  kind: "rest-xml";
-}
-
-interface GrpcWeb extends DiscrimatedUnion {
-  har: HarGrpcWeb;
-  kind: "grpc-web";
-}
-
-export type ValidHar = Gql | RestJson | RestXml | GrpcWeb;
+export type ValidHar =
+  | DiscriminatedHar<"graphql", HarGraphQL>
+  | DiscriminatedHar<"rest-json", HarRestJson>
+  | DiscriminatedHar<"rest-xml", HarRestXml>
+  | DiscriminatedHar<"grpc-web", HarGrpcWeb>;
 
 const discriminateByKind =
   (har: HarEntry) =>

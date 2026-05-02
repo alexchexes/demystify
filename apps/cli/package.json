@@ -16,7 +16,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src --no-splitting --external demystify-algorithm && chmod +x ./dist/index.js",
+    "build": "tsup src --no-splitting --external demystify-algorithm && node -e \"if (process.platform !== 'win32') require('node:fs').chmodSync('./dist/index.js', 0o755)\"",
     "prepublish": "npm run build",
     "test": "vitest run",
     "lint": "eslint . --max-warnings 0",
