@@ -42,6 +42,7 @@ describe('generateOai31', () => {
     expect(result.rootDoc.info.title).toBe('OpenAPI Specification');
     expect(result.rootDoc.info.description).toContain('example.com');
     expect(result.rootDoc.servers).toHaveLength(1);
+    expect(result.rootDoc.servers?.[0]?.url).toBe("https://api.example.com");
     expect(result.rootDoc.paths!["/a/{a}"]).toEqual({
       post: {
         summary: "/a/{a}",

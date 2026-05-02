@@ -27,16 +27,20 @@ export function generateOai31(hostToNode: HostToNode): OpenApiBuilder {
   });
   const headerCombos: { [s: string]: string[] } = {};
   for (const [host, rootNode] of Object.entries(hostToNode)) {
-    builder.addServer({
-      url: `http://${host}`,
-      variables: {
-        host: {
-          default: "localhost",
-          description: "The host of the server",
+    const endpoints = Array.from(yieldEndpoints([rootNode]));
+    const protocols = new Set(endpoints.map(({ node }) => node.data.protocol));
+    for (const protocol of protocols) {
+      builder.addServer({
+        url: `${protocol}//${host}`,
+        variables: {
+          host: {
+            default: "localhost",
+            description: "The host of the server",
+          },
         },
-      },
-    });
-    for (const endpoint of yieldEndpoints([rootNode])) {
+      });
+    }
+    for (const endpoint of endpoints) {
       const {
         node: { data },
         pathname,
