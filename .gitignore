@@ -36,6 +36,10 @@ yarn-error.log*
 .DS_Store
 *.pem
 
+# Local release artifacts and scratch files
+release-assets/
+tmp/
+
 
 # Logs
 logs
