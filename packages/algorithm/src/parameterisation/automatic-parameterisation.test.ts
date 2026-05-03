@@ -307,6 +307,114 @@ describe("automaticParameterisation", () => {
     expect(Object.keys(paths).sort()).toEqual(["/api/v2/orders/{order}"]);
   });
 
+  it("keeps static action suffixes when folding IDs below an existing dynamic path", () => {
+    const representor = new Representor({
+      parameterisation: { foldText: false },
+    });
+    const orderResponse = createContent({ id: 1, status: "ready" });
+    const actionResponse = createContent({ id: 1, action: "repeat-sell" });
+
+    representor.upsert(
+      createHarEntry({
+        url: `${href}/api/v2/orders/1234`,
+        response: orderResponse,
+      }),
+    );
+    representor.upsert(
+      createHarEntry({
+        url: `${href}/api/v2/orders/3456`,
+        response: orderResponse,
+      }),
+    );
+    representor.upsert(
+      createHarEntry({
+        url: `${href}/api/v2/orders/1234/repeat-sell`,
+        response: actionResponse,
+      }),
+    );
+    representor.upsert(
+      createHarEntry({
+        url: `${href}/api/v2/orders/3456/repeat-sell`,
+        response: actionResponse,
+      }),
+    );
+
+    const paths = representor.rest.generate().getSpec().paths || {};
+    expect(Object.keys(paths).sort()).toEqual([
+      "/api/v2/orders/{order}",
+      "/api/v2/orders/{order}/repeat-sell",
+    ]);
+  });
+
+  it("folds varying action suffixes below an ID when text folding is enabled", () => {
+    const representor = new Representor();
+    const response = createContent({ id: 1, status: "ready" });
+    const actionResponse = createContent({ id: 1, ok: true });
+
+    representor.upsert(
+      createHarEntry({ url: `${href}/api/v2/orders/1234`, response }),
+    );
+    representor.upsert(
+      createHarEntry({ url: `${href}/api/v2/orders/3456`, response }),
+    );
+    for (const [orderId, action] of [
+      ["1234", "repeat-sell"],
+      ["2345", "cancel"],
+      ["3456", "restore"],
+      ["4567", "archive"],
+    ]) {
+      representor.upsert(
+        createHarEntry({
+          url: `${href}/api/v2/orders/${orderId}/${action}`,
+          response: actionResponse,
+        }),
+      );
+    }
+
+    const paths = representor.rest.generate().getSpec().paths || {};
+    expect(Object.keys(paths).sort()).toEqual([
+      "/api/v2/orders/{order}",
+      "/api/v2/orders/{order}/{param5}",
+    ]);
+  });
+
+  it("does not fold varying action suffixes when text folding is disabled", () => {
+    const representor = new Representor({
+      parameterisation: { foldText: false },
+    });
+    const response = createContent({ id: 1, status: "ready" });
+    const actionResponse = createContent({ id: 1, ok: true });
+
+    representor.upsert(
+      createHarEntry({ url: `${href}/api/v2/orders/1234`, response }),
+    );
+    representor.upsert(
+      createHarEntry({ url: `${href}/api/v2/orders/3456`, response }),
+    );
+    for (const [orderId, action] of [
+      ["1234", "repeat-sell"],
+      ["2345", "cancel"],
+      ["3456", "restore"],
+      ["4567", "archive"],
+    ]) {
+      representor.upsert(
+        createHarEntry({
+          url: `${href}/api/v2/orders/${orderId}/${action}`,
+          response: actionResponse,
+        }),
+      );
+    }
+
+    const paths = representor.rest.generate().getSpec().paths || {};
+    expect(Object.keys(paths).sort()).toEqual([
+      "/api/v2/orders/1234/repeat-sell",
+      "/api/v2/orders/2345/cancel",
+      "/api/v2/orders/3456/restore",
+      "/api/v2/orders/4567/archive",
+      "/api/v2/orders/{order}",
+    ]);
+  });
+
   it("routes later ID examples with sparse optional branches into an existing dynamic path", () => {
     const representor = new Representor();
     const actionMaster = Object.fromEntries(

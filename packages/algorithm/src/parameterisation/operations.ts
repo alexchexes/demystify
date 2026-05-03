@@ -76,6 +76,7 @@ export const insertNode = (
       return insertNode(pathname.slice(1), node, dynamicChildExists);
     } else {
       const child = isLast ? node : createDynamicChild(part, intoNode);
+      child.key = part;
       intoNode.childrenDynamic.push(child);
       child.parent = intoNode;
       return insertNode(pathname.slice(1), node, child);
@@ -89,6 +90,7 @@ export const insertNode = (
       return insertNode(pathname.slice(1), node, staticChildExists);
     } else {
       const child = isLast ? node : createNode({ key: part, parent: intoNode });
+      child.key = part;
       intoNode.childrenStatic[part] = child;
       child.parent = intoNode;
       return insertNode(pathname.slice(1), node, child);
