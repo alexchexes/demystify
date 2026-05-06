@@ -35,19 +35,17 @@ export class Representor {
       // console.log("gRPC-Web not supported yet");
     }
     return false;
-  };
+  }
 
   reset = (): void => {
     this.rest.reset();
-  };
+  }
 
   serialise = (): string => {
-    return (
-      stringify({
-        rest: this.rest.serialise(),
-      }) || ""
-    );
-  };
+    return stringify({
+      rest: this.rest.serialise(),
+    }) || "";
+  }
 
   deserialise = (input: string): boolean => {
     try {
@@ -59,5 +57,5 @@ export class Representor {
     } catch {
       return false;
     }
-  };
+  }
 }

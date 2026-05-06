@@ -109,8 +109,7 @@ To copy a HAR in the network tab of modern browsers, right click on a request, c
       />
       <div class="flex justify-between">
         <Button variant="secondary" @click="handleCancel">Cancel</Button>
-        <Button @click="handleLoadText" :disabled="!textareaContent"
-          >Save</Button
+        <Button @click="handleLoadText" :disabled="!textareaContent">Save</Button
         >
       </div>
     </DialogContent>

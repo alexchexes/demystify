@@ -5,7 +5,6 @@ Consists of a `Representor` class that accepts HAR entries and triages it. REST-
 See the interface in `Representor.ts` and `Rest.ts` for usage information, along with test files.
 
 Features:
-
 - Real time efficient generation of documents in any format from aggregated data, of which OpenAPI 3.1 is implemented
 - Automatic identification and parameterisation of path parameters
 - Merges new information into existing data
@@ -82,7 +81,7 @@ observation matches an existing dynamic path, it can be merged into that path.
 When Demystify is uncertain, it keeps routes concrete rather than folding them.
 
 ```typescript
-import { Representor } from "demystify-lib";
+import { Representor } from 'demystify-lib';
 // Instantiate the representor
 // Which "represents" an API in a particular way, such as OpenAPI or GraphQL
 const representor = new Representor();

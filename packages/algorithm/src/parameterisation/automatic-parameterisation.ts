@@ -1,9 +1,6 @@
 import { negate } from "lodash";
 import { IrNode } from "../types/index.js";
-import {
-  isNodeDynamic,
-  matchDynamicChildren,
-} from "../utils/dynamic-children-helpers.js";
+import { isNodeDynamic, matchDynamicChildren } from "../utils/dynamic-children-helpers.js";
 import { parameterise } from "./parameterise.js";
 import { findAllMatches } from "./find-matches.js";
 import { isNodeDataEquivalent } from "./node-data-equivalence.js";
@@ -66,10 +63,7 @@ const getParameterisationCandidate = (
   };
 };
 
-const getParameterisedPathname = (
-  path1: string[],
-  path2: string[],
-): string[] => {
+const getParameterisedPathname = (path1: string[], path2: string[]): string[] => {
   const result: string[] = [];
   for (let i = 0; i < path1.length; i++) {
     if (path1[i] && path1[i] === path2[i]) {

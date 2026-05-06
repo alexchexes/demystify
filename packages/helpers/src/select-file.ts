@@ -1,9 +1,6 @@
 import type { Har, Entry } from "har-format";
 
-export const selectFile = (
-  onFinish: (entries: Entry[]) => void,
-  toast: (arg: object) => void = () => {},
-) => {
+export const selectFile = (onFinish: (entries: Entry[]) => void, toast: (arg: object) => void = () => { }) => {
   return async () => {
     const input = document.createElement("input");
     input.type = "file";

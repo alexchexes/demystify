@@ -207,11 +207,7 @@ const boundOnClickLoad = async () => {
   } catch (e: any) {
     console.log(e.message);
     // The error below happens every time the user closes the file dialog without a selection
-    if (
-      e.message.startsWith(
-        "Error calling method: open : no such file or directory",
-      )
-    ) {
+    if (e.message.startsWith("Error calling method: open : no such file or directory")) {
       return;
     }
     toast({

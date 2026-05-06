@@ -1,20 +1,18 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from 'vitest';
 import { Validator } from "@seriousme/openapi-schema-validator";
-import { execSync } from "node:child_process";
-import { resolve } from "node:path";
-import { readFileSync, rmSync } from "node:fs";
+import { execSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { readFileSync, rmSync } from 'node:fs';
 
-const inputHar = resolve(__dirname, "./rest_post.json");
-const builtFile = resolve(__dirname, "../dist/index.js");
-const callFile = (stdout?: "-s" | "--stdout") => {
-  const stdOutStr = stdout || "";
-  return execSync(`node ${builtFile} --input ${inputHar} ${stdOutStr}`, {
-    encoding: "utf-8",
-  });
+const inputHar = resolve(__dirname, './rest_post.json');
+const builtFile = resolve(__dirname, '../dist/index.js');
+const callFile = (stdout?: '-s' | '--stdout') => {
+  const stdOutStr = stdout || '';
+  return execSync(`node ${builtFile} --input ${inputHar} ${stdOutStr}`, { encoding: 'utf-8' });
 };
 
-const hostnameOne = "one.com";
-const hostnameTwo = "two.com";
+const hostnameOne = 'one.com';
+const hostnameTwo = 'two.com';
 
 const deleteAllFiles = () => {
   const cwd = process.cwd();
@@ -26,18 +24,18 @@ const readAllFiles = (filenames: string[]): string[] => {
   const cwd = process.cwd();
   const out: string[] = [];
   for (const filename of filenames) {
-    const content = readFileSync(`${cwd}/${filename}.openapi.json`, "utf-8");
+    const content = readFileSync(`${cwd}/${filename}.openapi.json`, 'utf-8');
     out.push(content);
   }
   return out;
-};
+}
 
-describe("CLI", () => {
+describe('CLI', () => {
   afterEach(() => {
     deleteAllFiles();
   });
 
-  it("produces valid openapi files", async () => {
+  it('produces valid openapi files', async () => {
     callFile();
     const jsonArr = readAllFiles([hostnameOne, hostnameTwo]);
     for (const json of jsonArr) {
@@ -46,8 +44,8 @@ describe("CLI", () => {
     }
   });
 
-  it("when -s or --stdout is specified, outputs valid openapi json", async () => {
-    const flags = ["-s", "--stdout"] as const;
+  it('when -s or --stdout is specified, outputs valid openapi json', async () => {
+    const flags = ['-s', '--stdout'] as const;
     for (const flag of flags) {
       const stdout = callFile(flag);
       const stdoutStr = stdout.toString();

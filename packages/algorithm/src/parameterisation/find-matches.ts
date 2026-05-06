@@ -1,6 +1,8 @@
 import { IrNode } from "../types/ir-graph.js";
-import { matchDynamicChildren } from "../utils/dynamic-children-helpers.js";
 import { areNodesEquivalent } from "./node-data-equivalence.js";
+import {
+  matchDynamicChildren
+} from "../utils/dynamic-children-helpers.js";
 import { isPartDynamic } from "./operations.js";
 
 /**
@@ -70,9 +72,13 @@ const dfs = (
     items.push(childDynamic);
   }
   for (const value of items) {
-    results.push(
-      ...dfs(pathname.slice(1), insertedNode, value, comparator, []),
-    );
+    results.push(...dfs(
+        pathname.slice(1),
+        insertedNode,
+        value,
+        comparator,
+        [],
+    ));
   }
   return results;
 };

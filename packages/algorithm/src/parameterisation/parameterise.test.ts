@@ -41,11 +41,11 @@ describe("parameterise", () => {
       representor.rest.data[host]!.childrenStatic["a"]!.childrenStatic["b"]!,
     );
     representor.upsert(
-      createHarEntry({ url: `${href}/a/c`, request: request1 }),
+      createHarEntry({ url: `${href}/a/c`, request: request1 })
     );
     const parameterisePathname = ["a", "{dynamic}"];
     representor.upsert(
-      createHarEntry({ url: `${href}/a/b/c`, request: request1 }),
+      createHarEntry({ url: `${href}/a/b/c`, request: request1 })
     );
     representor.upsert(createHarEntry({ url: `${href}/a`, request: request2 }));
     representor.upsert(createHarEntry({ url: `${href}/a`, request: request1 }));
@@ -59,7 +59,7 @@ describe("parameterise", () => {
     expect(Object.values(node.parent!.childrenStatic)).toHaveLength(1);
     expect(
       node.parent?.data?.methods?.[method]?.request?.[mimeType]?.body
-        ?.properties?.["test"]?.type,
+        ?.properties?.["test"]?.type
     ).toEqual(["boolean", "integer"]);
     const reqBodyTypes =
       node.data?.methods?.[method]?.request?.[mimeType]?.body?.properties?.[

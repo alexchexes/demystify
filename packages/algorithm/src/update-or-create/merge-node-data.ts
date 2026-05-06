@@ -6,10 +6,7 @@ type Req = NonNullable<NodeData["methods"]["get"]["request"]>;
 type Res = NodeData["methods"]["get"]["response"];
 type Cookies = NodeData["methods"]["get"]["cookies"];
 
-const mergeCookies = (
-  dest: NonNullable<Cookies>,
-  src: NonNullable<Cookies>,
-) => ({
+const mergeCookies = (dest: NonNullable<Cookies>, src: NonNullable<Cookies>) => ({
   ...dest,
   ...src,
 });
@@ -55,7 +52,8 @@ const mergeResponse = (dest: Data, src: Res = {}) => {
         } else if (srcData.body) {
           selector.body = mergeSchemas([selector.body, srcData.body]);
         }
-        selector.mostRecent = mediaTypeData.mostRecent;
+        selector.mostRecent =
+          mediaTypeData.mostRecent;
       }
     });
   });
@@ -80,7 +78,7 @@ export const mergeNodeData = (dest: NodeData, src: NodeData): NodeData => {
       } else {
         dest.methods[method].cookies = mergeCookies(
           dest.methods[method].cookies,
-          src.methods[method].cookies,
+          src.methods[method].cookies
         );
       }
     }
@@ -92,15 +90,15 @@ export const mergeNodeData = (dest: NodeData, src: NodeData): NodeData => {
     if (destSchema.queryParameters || srcSchema.queryParameters) {
       destSchema.queryParameters = {
         ...destSchema.queryParameters,
-        ...srcSchema.queryParameters,
-      };
+        ...srcSchema.queryParameters
+      }
     }
     // Merge request headers
     if (destSchema.requestHeaders || srcSchema.requestHeaders) {
       const destReqHeaders = destSchema.requestHeaders || [];
       const srcReqHeaders = srcSchema.requestHeaders || [];
       destSchema.requestHeaders = Array.from(
-        new Set([...destReqHeaders, ...srcReqHeaders]),
+        new Set([...destReqHeaders, ...srcReqHeaders])
       );
     }
     // Merge response headers
@@ -108,7 +106,7 @@ export const mergeNodeData = (dest: NodeData, src: NodeData): NodeData => {
       const destResHeaders = destSchema.responseHeaders || [];
       const srcResHeaders = srcSchema.responseHeaders || [];
       destSchema.responseHeaders = Array.from(
-        new Set([...destResHeaders, ...srcResHeaders]),
+        new Set([...destResHeaders, ...srcResHeaders])
       );
     }
     // Merge responses

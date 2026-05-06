@@ -91,7 +91,7 @@ Example type: openapi
     }
   } catch {
     console.error(
-      'Could not parse the HAR file. It should be JSON, beginning with { "log": ... }',
+      'Could not parse the HAR file. It should be JSON, beginning with { "log": ... }'
     );
     process.exit(1);
   }
@@ -108,7 +108,7 @@ Example type: openapi
     }
   }
   if (output.length) {
-    console.log(`[${output.join(",\n")}]`);
+    console.log(`[${output.join(',\n')}]`);
   }
 }
 

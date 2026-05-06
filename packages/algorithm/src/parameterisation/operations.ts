@@ -40,7 +40,7 @@ const removeEmptyNodes = (node: IrNode): void => {
     if (isNodeDynamic(node)) {
       node.parent.childrenDynamic = removeDynamicChild(
         node.key,
-        node.parent.childrenDynamic,
+        node.parent.childrenDynamic
       );
     }
     removeEmptyNodes(node.parent);
@@ -54,11 +54,7 @@ export const isPartDynamic = (part: string) =>
  * Inserts node at position pathname into intoNode
  * Creates nodes along its path if necessary
  */
-export const insertNode = (
-  pathname: string[],
-  node: IrNode,
-  intoNode: IrNode,
-): void => {
+export const insertNode = (pathname: string[], node: IrNode, intoNode: IrNode): void => {
   if (pathname.length === 0) {
     return;
   }
@@ -67,7 +63,7 @@ export const insertNode = (
   if (isPartDynamic(part)) {
     const dynamicChildExists = matchDynamicChildren(
       part,
-      intoNode.childrenDynamic,
+      intoNode.childrenDynamic
     );
     if (dynamicChildExists) {
       if (isLast) {
